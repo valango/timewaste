@@ -1,11 +1,14 @@
 'use strict'
-console.log('INDEX', process.env.NODE_ENV)
+
 if (process.env.NODE_ENV === 'production' && !process.env.USE_DEV) {
   const noop = () => true
 
   module.exports = {
     profBegin: noop,
-    profEnd: noop
+    profEnd: noop,
+    profReset: noop,
+    profResults: noop && [],
+    profSetup: noop && {}
   }
 } else {
   const api = require('./profile')

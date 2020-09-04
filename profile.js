@@ -2,16 +2,23 @@
 /* global BigInt: false */
 
 // const Sheet = require('./Sheet')
-console.log("PROFILE")
-let assert
-let getTime, timeScale, T0, step
 
-let isEnabled = process.env.NODE_ENV !== 'production'
+/** @type {function(...)} can be set via profSetup() */
+let assert
+
+/** @type {boolean} can be set via profOn() to control access to rest of the API. */
+let isEnabled = true
+
+let getTime
+
+//  number or BigInt values to make math work and to normalize totals.
+let step, timeScale, zeroDuration
+
 let measures = [], pending = [], threads = []
 
 function Measure (tag) {
   this.entries = []
-  this.n = T0
+  this.n = zeroDuration
   this.tag = tag
 }
 
@@ -43,13 +50,13 @@ Measure.prototype.mean = function () {
 
 /** @returns {BigInt|number} */
 Measure.prototype.total = function () {
-  return this.entries.reduce((a, r) => a + r[0], T0) / timeScale
+  return this.entries.reduce((a, r) => a + r[0], zeroDuration) / timeScale
 }
 
 function ThreadAcc (tag) {
   this.tag = tag
-  this.t = T0
-  this.n = T0
+  this.t = zeroDuration
+  this.n = zeroDuration
 }
 
 ThreadAcc.prototype.count = function () {
@@ -73,66 +80,98 @@ const newMeasure = (tag) => {
   return r
 }
 
+/** @type {number} index set by findByTag() function */
 let foundIndex
 
-const findByTag = (tag, array) => array.find((r, i) => r.tag === tag && ((foundIndex = i) || true))
+const findByTag = (tag, array) => {
+  foundIndex = undefined
+  return array.find((r, i) => r.tag === tag && ((foundIndex = i) || true))
+}
 
-const getPathTo = (j) => {
-  return pending.slice(0, j + 1).map(({ tag }) => tag)
+/**
+ * Get path from top to given index in pending entries.
+ * @param {number} index
+ * @returns {string[]}
+ */
+const getPathTo = (index) => {
+  return pending.slice(0, index + 1).map(({ tag }) => tag)
 }
 
 const profThreadBegin = (tag, id) => {
   assert(tag && typeof tag === 'string' && tag.indexOf('#') < 0, 'profThreadBegin(): invalid tag')
   const name = tag + '#' + id, tg = '>' + tag
   assert(!findByTag(name, threads), 'profThreadBegin(' + name + '): doubled')
+
   if (!findByTag(tg, measures)) measures.push(new ThreadAcc(tg))
   threads.push({ tag: name, t0: getTime() })
   return true
 }
 
 const profThreadEnd = (tag, id) => {
-  const acc = findByTag('>' + tag, measures), name = tag + '#' + id, r = findByTag(name, threads)
-  assert(r, 'ThreadEnd(' + name + '): no thread')
+  const acc = findByTag('>' + tag, measures), name = tag + '#' + id
+  const rec = findByTag(name, threads)
+
+  assert(rec, 'profThreadEnd(' + name + '): no thread')
   threads.splice(foundIndex, 1)
-  acc.t += getTime() - r.t0
+  acc.t += getTime() - rec.t0
   acc.n += step
   return true
 }
 
-const profBegin = (tag, id = undefined) => {
+/**
+ * Unless `threadId` is given, push { tag, t0 } entry to `pending` stack.
+ * @param {string} tag
+ * @param {*=} threadId
+ * @returns {boolean|number}
+ */
+const profBegin = (tag, threadId = undefined) => {
   if (!isEnabled) return true
-  if (id !== undefined) return profThreadBegin(tag, id)
-  assert(tag && typeof tag === 'string' && tag.indexOf('>') < 0, 'Begin(): invalid tag')
+  if (threadId !== undefined) return profThreadBegin(tag, threadId)
+  assert(tag && typeof tag === 'string' && tag.indexOf('>') < 0, 'profBegin(): invalid tag')
   const r = findByTag(tag, pending)
-  assert(!r, 'Begin(' + tag + '): tag is still open')
+  assert(!r, 'profBegin(' + tag + '): tag is still open')
   return pending.push({ tag, t0: getTime() })
 }
 
-const profEnd = (tag, id = undefined) => {
+/**
+ * Close the pending entry and increase existing accumulator.
+ * @param {string|boolean} tag
+ * @param {*=} threadId
+ * @returns {boolean} always true
+ */
+const profEnd = (tag, threadId = undefined) => {
   if (isEnabled) {
-    if (id !== undefined) return profThreadEnd(tag, id)
+    if (threadId !== undefined) return profThreadEnd(tag, threadId)
+
     const t1 = getTime()
-    let j = 0, r = pending[0]
-    assert(pending.length || tag === true, 'End(' + tag + '): nothing to end')
+    let j = 0, measure, realTag = tag
+
+    assert(pending.length || tag === true, 'profEnd(' + tag + '): nothing to end')
 
     if (tag === true) {
+      realTag = (pending[0] && pending[0].tag) || '???'
       threads = []
     } else {
-      r = findByTag(tag, pending)
+      const r = findByTag(tag, pending)
+      assert(r, 'profEnd(' + tag + '): no such entry')
       j = foundIndex
-      assert(r, 'End(' + tag + '): no such entry')
     }
-    //  If we weren't at the last entry, then terminate those, too.
+
     for (let i = pending.length; --i >= j;) {
       const path = (tag === true || i > j) && getPathTo(i)
       const { t0 } = pending.pop()
-      const measure = findByTag(tag, measures) || newMeasure(tag)
-      measure.add(t1 - t0, path)
+      if (!measure) measure = findByTag(realTag, measures) || newMeasure(realTag)
+      measure.add(t1 - t0, path)    //  NB: `path` is set only if there were open entries.
     }
   }
   return true
 }
 
+/**
+ * Clear all pending entries and matching or all measures.
+ * @param {RegExp=} rx to test measure tags.
+ * @returns {boolean} always true.
+ */
 const profReset = (rx = undefined) => {
   if (isEnabled) {
     if (rx) {
@@ -147,10 +186,17 @@ const profReset = (rx = undefined) => {
   return true
 }
 
+/**
+ * @returns {number} current depth.
+ */
 const profDepth = () => pending.length
 
+/**
+ * @returns {Object[]} sorted array of measures.
+ */
 const profResults = (sortBy = 'total') => {
   if (!isEnabled) return []
+
   return measures.slice().sort((a, b) => {
     const v = b[sortBy]() - a[sortBy]()
     if (v === 0n || v === 0) return 0
@@ -162,22 +208,27 @@ const profSetup = (options = undefined) => {
   const old = { getTime, timeScale }
 
   if (options) {
-    if(options.assert) assert = options.assert    //  Useful for initialization.
+    if (options.assert) assert = options.assert    //  Useful for initialization.
     assert(pending.length === 0 && measures.length === 0 && threads.length === 0,
       'Setup() while operating')
     if (options.getTime) getTime = options.getTime
     const big = typeof getTime() !== 'number'
     timeScale = options.timeScale || (big ? BigInt(1e3) : 1)
-    T0 = big ? 0n : 0
+    zeroDuration = big ? 0n : 0
     step = big ? 1n : 1
   }
   return old
 }
 
+/**
+ * Enable / disable the profiler API.
+ * @param {boolean|undefined} yes
+ * @returns {boolean} earlier state.
+ */
 const profOn = (yes = undefined) => {
   const old = isEnabled
   if (yes !== undefined) {
-    assert(yes || !(pending.length || threads.length), 'On(false) in pending state')
+    assert(yes || !(pending.length || threads.length), 'profOn(false) in pending state')
     isEnabled = yes
   }
   return old

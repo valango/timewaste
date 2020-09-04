@@ -6,23 +6,30 @@ const delay = (t) => new Promise(resolve => {
   setTimeout(resolve, t)
 })
 
-const print = ()=>undefined
+let time = 0
+const getTime = () => time
+
+const print = () => undefined
 // const print = str => process.stdout.write(str + '\n')
 
 const tests = () => {
-  it('should handle main case', async () => {
-    expect(Object.keys(profSetup())).toEqual(['getTime', 'timeScale'])
+  it('should handle main case', () => {
+    expect(Object.keys(profSetup({ getTime }))).toEqual(['getTime', 'timeScale'])
     expect(profOn()).toBe(true)
     profEnd(true)     //  Should not throw.
     expect(profOn(true)).toBe(true)
+    time = 2
     expect(profBegin('a') && profBegin('b')).toBe(2)
+    time = 4
     expect(profEnd('b') && profBegin('b')).toBe(2)
+    time = 6
     profBegin('fun', 1)
-    await delay(10)
     profEnd('b')
-    await delay(5)
+    time = 8
     profEnd('fun', 1)
     profEnd('a')
+    // const r = profResults()
+    // r.forEach(o => console.log(o.tag, o.entries))
     expect(profDepth()).toBe(0)
     // profTexts().forEach(r => print(r))
     // expect(profTexts().length).toBe(3)
