@@ -24,14 +24,15 @@
   ],
   "scripts": {
     "clean": "rimraf reports *.log yarn.lock",
-    "coverage": "codecov",
-    "postinstall": "rm *.config.js",
-    "lint": "eslint --ext .js",
+    "lint": "eslint *.js .",
     "purge": "rimraf reports *.log yarn.lock node_modules",
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "codecov"
+  },
+  "dependencies": {
+    "assert-fine": "^1.0.1"
   },
   "devDependencies": {
-    "assert-fine": "^1.0.1",
     "codecov": "^3.7.2",
     "eslint": "^7.8.1",
     "jest": "^26.4.2",

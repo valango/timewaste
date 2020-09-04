@@ -1,16 +1,9 @@
-/**
- * @module Dir/profile
- * @version 1.0.0
- */
 'use strict'
 /* global BigInt: false */
 
 // const Sheet = require('./Sheet')
-
-const assert = (cond, msg) => {
-  if (!cond) throw new Error('prof' + msg)
-}
-
+console.log("PROFILE")
+let assert
 let getTime, timeScale, T0, step
 
 let isEnabled = process.env.NODE_ENV !== 'production'
@@ -89,9 +82,9 @@ const getPathTo = (j) => {
 }
 
 const profThreadBegin = (tag, id) => {
-  assert(tag && typeof tag === 'string' && tag.indexOf('#') < 0, 'Thread(): invalid tag')
+  assert(tag && typeof tag === 'string' && tag.indexOf('#') < 0, 'profThreadBegin(): invalid tag')
   const name = tag + '#' + id, tg = '>' + tag
-  assert(!findByTag(name, threads), 'ThreadBegin(' + name + '): doubled')
+  assert(!findByTag(name, threads), 'profThreadBegin(' + name + '): doubled')
   if (!findByTag(tg, measures)) measures.push(new ThreadAcc(tg))
   threads.push({ tag: name, t0: getTime() })
   return true
@@ -169,6 +162,7 @@ const profSetup = (options = undefined) => {
   const old = { getTime, timeScale }
 
   if (options) {
+    if(options.assert) assert = options.assert    //  Useful for initialization.
     assert(pending.length === 0 && measures.length === 0 && threads.length === 0,
       'Setup() while operating')
     if (options.getTime) getTime = options.getTime
@@ -189,10 +183,6 @@ const profOn = (yes = undefined) => {
   return old
 }
 
-profSetup({
-  getTime: (process && process.hrtime && process.hrtime.bigint) || Date.now
-})
-
 // const profTexts = (sortBy = 'mean') => {
 //   const sheet = new Sheet({ minWidth: 7 })
 //
@@ -209,7 +199,7 @@ profSetup({
 //   return sheet.dump()
 // }
 
-exports = module.exports = {
+module.exports = {
   profBegin,
   profDepth,
   profEnd,
@@ -218,3 +208,4 @@ exports = module.exports = {
   profResults,
   profSetup
 }
+
