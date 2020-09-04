@@ -19,7 +19,8 @@
   "main": "index.js",
   "files": [
     "index.js",
-    "profile.js"
+    "profile.js",
+    "Sheet.js"
   ],
   "scripts": {
     "clean": "rimraf reports *.log yarn.lock",

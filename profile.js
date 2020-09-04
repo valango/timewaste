@@ -1,7 +1,7 @@
 'use strict'
 /* global BigInt: false */
 
-// const Sheet = require('./Sheet')
+const Sheet = require('./Sheet')
 
 /** @type {function(...)} can be set via profSetup() */
 let assert
@@ -238,21 +238,21 @@ const profOn = (yes = undefined) => {
   return old
 }
 
-// const profTexts = (sortBy = 'mean') => {
-//   const sheet = new Sheet({ minWidth: 7 })
-//
-//   sheet.header = ['tag', 'mean', 'count', 'total']
-//   profResults(sortBy).forEach((r) => {
-//     let l = r.leaks()
-//
-//     sheet.append([r.tag, r.mean(), r.count(), r.total()])
-//     if (l.count) {
-//       delete l.count
-//       Object.keys(l).forEach(k => sheet.append('  LEAK: ' + k + ': ' + l[k]))
-//     }
-//   })
-//   return sheet.dump()
-// }
+const profTexts = (sortBy = 'mean') => {
+  const sheet = new Sheet({ minWidth: 7 })
+
+  sheet.header = ['tag', 'mean', 'count', 'total']
+  profResults(sortBy).forEach((r) => {
+    let l = r.leaks()
+
+    sheet.append([r.tag, r.mean(), r.count(), r.total()])
+    if (l.count) {
+      delete l.count
+      Object.keys(l).forEach(k => sheet.append('  LEAK: ' + k + ': ' + l[k]))
+    }
+  })
+  return sheet.dump()
+}
 
 module.exports = {
   profBegin,
@@ -261,6 +261,7 @@ module.exports = {
   profOn,
   profReset,
   profResults,
-  profSetup
+  profSetup,
+  profTexts,
 }
 

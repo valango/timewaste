@@ -31,8 +31,8 @@ const tests = () => {
     // const r = profResults()
     // r.forEach(o => console.log(o.tag, o.entries))
     expect(profDepth()).toBe(0)
-    // profTexts().forEach(r => print(r))
-    // expect(profTexts().length).toBe(3)
+    profTexts().forEach(r => print(r))
+    expect(profTexts().length).toBe(3)
   })
 
   it('should reset', () => {
@@ -62,8 +62,8 @@ const tests = () => {
     profBegin('a') && profBegin('b') && profBegin('c')
     profEnd('a')
     expect(profResults()[0].leaks().count).toBe(2)
-    // profTexts().forEach(r => print(r))
-    // expect(profTexts().length).toBe(3)
+    profTexts().forEach(r => print(r))
+    expect(profTexts().length).toBe(3)
     profReset()   //  Here to clear measures.
   })
 
@@ -72,8 +72,8 @@ const tests = () => {
     profBegin('a') && profBegin('b') && profBegin('c')
     profEnd(true)
     expect(profResults()[0].leaks().count).toBe(3)
-    // profTexts().forEach(r => print(r))
-    // expect(profTexts().length).toBe(4)
+    profTexts().forEach(r => print(r))
+    expect(profTexts().length).toBe(4)
     profReset()   //  Here to clear measures.
   })
 }
