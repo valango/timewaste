@@ -14,7 +14,7 @@ const print = () => undefined
 
 const tests = () => {
   it('should handle main case', () => {
-    expect(Object.keys(profSetup({ getTime }))).toEqual(['getTime', 'timeScale'])
+    expect(Object.keys(profSetup({ getTime }))).toEqual(['getTime', 'pureDuration', 'timeScale'])
     expect(profOn()).toBe(true)
     profEnd(true)     //  Should not throw.
     expect(profOn(true)).toBe(true)

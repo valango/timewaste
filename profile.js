@@ -8,6 +8,7 @@ let assert
 
 /** @type {boolean} can be set via profOn() to control access to rest of the API. */
 let isEnabled = true
+let pureDuration = false
 
 let getTime
 
@@ -144,7 +145,7 @@ const profEnd = (tag, threadId = undefined) => {
     if (threadId !== undefined) return profThreadEnd(tag, threadId)
 
     const t1 = getTime()
-    let j = 0, measure, realTag = tag
+    let duration, j = 0, measure, realTag = tag
 
     assert(pending.length || tag === true, 'profEnd(' + tag + '): nothing to end')
 
@@ -161,8 +162,10 @@ const profEnd = (tag, threadId = undefined) => {
       const path = (tag === true || i > j) && getPathTo(i)
       const { t0 } = pending.pop()
       if (!measure) measure = findByTag(realTag, measures) || newMeasure(realTag)
+      if (pureDuration) duration = duration === undefined ? t1 - t0 : duration + t1 - t0
       measure.add(t1 - t0, path)    //  NB: `path` is set only if there were open entries.
     }
+    if (duration) pending.forEach(r => r.t0 += duration)
   }
   return true
 }
@@ -205,13 +208,14 @@ const profResults = (sortBy = 'total') => {
 }
 
 const profSetup = (options = undefined) => {
-  const old = { getTime, timeScale }
+  const old = { getTime, pureDuration, timeScale }
 
   if (options) {
     if (options.assert) assert = options.assert    //  Useful for initialization.
     assert(pending.length === 0 && measures.length === 0 && threads.length === 0,
       'Setup() while operating')
     if (options.getTime) getTime = options.getTime
+    if (options.pureDuration !== undefined) pureDuration = options.pureDuration
     const big = typeof getTime() !== 'number'
     timeScale = options.timeScale || (big ? BigInt(1e3) : 1)
     zeroDuration = big ? 0n : 0
