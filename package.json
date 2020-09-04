@@ -1,0 +1,43 @@
+{
+  "name": "vtimewaste",
+  "version": "0.1.0",
+  "description": "Lightweight execution time analyzer",
+  "keywords": [
+    "analyzer",
+    "execution",
+    "browser",
+    "nodejs",
+    "profiler",
+    "time"
+  ],
+  "author": "Villem Alango <villem.alango@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/valango/timewaste.git"
+  },
+  "main": "index.js",
+  "files": [
+    "[a-z]*.js",
+    "debug",
+    "performance"
+  ],
+  "scripts": {
+    "clean": "rimraf reports *.log yarn.lock",
+    "coverage": "codecov",
+    "postinstall": "rm *.config.js",
+    "lint": "eslint --ext .js",
+    "purge": "rimraf reports *.log yarn.lock node_modules",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "assert-fine": "^1.0.1",
+    "codecov": "^3.7.2",
+    "eslint": "^7.8.1",
+    "jest": "^26.4.2",
+    "rimraf": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=10.15.1"
+  }
+}

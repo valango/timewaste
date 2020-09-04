@@ -1,0 +1,7 @@
+.DS_Store
+.thumbs.db
+/node_modules
+/reports
+.nyc_output
+*.log
+yarn.lock
