@@ -1,5 +1,5 @@
 {
-  "name": "vtimewaste",
+  "name": "timewaste",
   "version": "0.1.0",
   "description": "Lightweight execution time analyzer",
   "keywords": [
@@ -18,9 +18,8 @@
   },
   "main": "index.js",
   "files": [
-    "[a-z]*.js",
-    "debug",
-    "performance"
+    "index.js",
+    "profile.js"
   ],
   "scripts": {
     "clean": "rimraf reports *.log yarn.lock",
