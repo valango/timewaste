@@ -2,13 +2,11 @@ module.exports = {
   root: true,
 
   parserOptions: {
-    ecmaVersion: 6,
     sourceType: 'module'
   },
 
   env: {
-    es6: true,
-    // browser: true,
+    es2020: true,
     node: true
   },
 
@@ -16,35 +14,12 @@ module.exports = {
     'eslint:recommended'
   ],
 
-  globals: {
-    'jest': true,
-    '__statics': true,
-    'process': true,
-    'chrome': true
-  },
-
-  // add your custom rules here
   rules: {
-    // allow async-await
-    'generator-star-spacing': 'off',
-    // allow paren-less arrow functions
-    'arrow-parens': 'off',
-    'one-var': 'off',
+    'no-multi-spaces': ['error', { ignoreEOLComments: true }],
+    'no-multiple-empty-lines': 'warn',
+    'no-trailing-spaces': 'warn',
 
-    'import/first': 'off',
-    // 'import/named': 'error',
-    // 'import/namespace': 'error',
-    // 'import/default': 'error',
-    // 'import/export': 'error',
-    'import/extensions': 'off',
-    'import/no-unresolved': 'off',
-    'import/no-extraneous-dependencies': 'off',
-    'prefer-promise-reject-errors': 'off',
-    'no-multi-spaces': 'off',
-
-    // allow console.log during development only
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
-    // allow debugger during development only
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-unreachable': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
     'no-unused-vars': process.env.NODE_ENV === 'production' ? 'error' : 'warn'

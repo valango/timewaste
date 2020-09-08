@@ -2,10 +2,6 @@
 const { profBegin, profDepth, profEnd, profOn, profReset, profResults, profSetup, profTexts } =
         require('..')
 
-const delay = (t) => new Promise(resolve => {
-  setTimeout(resolve, t)
-})
-
 let time = 0
 const getTime = () => time
 

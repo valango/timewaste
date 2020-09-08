@@ -1,5 +1,4 @@
 'use strict'
-/* global BigInt: false */
 
 const Sheet = require('./Sheet')
 
@@ -213,7 +212,7 @@ const profSetup = (options = undefined) => {
   if (options) {
     if (options.assert) assert = options.assert    //  Useful for initialization.
     assert(pending.length === 0 && measures.length === 0 && threads.length === 0,
-      'Setup() while operating')
+      'profSetup() while operating')
     if (options.getTime) getTime = options.getTime
     if (options.pureDuration !== undefined) pureDuration = options.pureDuration
     const big = typeof getTime() !== 'number'
