@@ -44,8 +44,9 @@ Measure.prototype.leaks = function () {
   return { ...dict, count }
 }
 
+//  Negative return value means pending while closed.
 Measure.prototype.mean = function () {
-  return this.total() / this.count()
+  return this.total() ? this.total() / this.count() : -1
 }
 
 /** @returns {BigInt|number} */
@@ -69,8 +70,9 @@ ThreadAcc.prototype.total = function () {
   return this.t / timeScale
 }
 
+//  Negative return value means pending while closed.
 ThreadAcc.prototype.mean = function () {
-  return this.total() / this.n
+  return this.n ? this.total() / this.n : -1
 }
 
 /** @returns {Measure} */
