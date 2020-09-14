@@ -1,6 +1,6 @@
 'use strict'
 
-if (process.env.NODE_ENV === 'production' && !process.env.USE_DEV) {
+if (process.env.NODE_ENV === 'production' && !process.env.TIMEWASTE) {
   const noop = () => true
 
   module.exports = {

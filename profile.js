@@ -20,7 +20,7 @@ let pureDuration = false
 let getTime
 
 //  number or BigInt values to make math work and to normalize totals.
-let step, timeScale, zeroDuration
+let step, timeScale, zeroValue
 
 /** @type {Array<Measure|ThreadAcc>} */
 const measures = []
@@ -58,14 +58,13 @@ const findByTag = (tag, array) => {
  */
 function Measure (tag) {
   this.entries = []
-  this.n = zeroDuration
+  this.n = zeroValue
   this.tag = tag
 }
 
 Measure.prototype.add = function (time, path) {
   this.entries.push(path ? [time, path.join('>')] : [time])
   this.n += step
-  return this
 }
 
 /** @returns {number} */
@@ -91,7 +90,7 @@ Measure.prototype.mean = function () {
 
 /** @returns {BigInt|number} */
 Measure.prototype.total = function () {
-  return this.entries.reduce((a, entry) => a + entry[0], zeroDuration) / timeScale
+  return this.entries.reduce((a, entry) => a + entry[0], zeroValue) / timeScale
 }
 
 /**
@@ -100,8 +99,8 @@ Measure.prototype.total = function () {
  */
 function ThreadAcc (tag) {
   this.tag = tag
-  this.t = zeroDuration
-  this.n = zeroDuration
+  this.t = zeroValue
+  this.n = zeroValue
 }
 
 ThreadAcc.prototype.count = function () {
@@ -288,7 +287,7 @@ const profSetup = (options = undefined) => {
     if (options.pureDuration !== undefined) pureDuration = options.pureDuration
     const big = typeof getTime() !== 'number'
     timeScale = options.timeScale || (big ? BigInt(1e3) : 1)
-    zeroDuration = big ? 0n : 0
+    zeroValue = big ? 0n : 0
     step = big ? 1n : 1
   }
   return old
