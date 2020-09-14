@@ -14,6 +14,7 @@
 
 const DEFAULTS = {
   block: 40,
+  fractionWidth: 3,
   maxCWidth: 40,
   minWidth: 3,
   bSep: '\n',
@@ -114,6 +115,10 @@ class Sheet {
     const mw = this._opt.maxCWidth, a = Math.floor(mw / 2) - 1
     const row = typeof values === 'string' ? values : values.map((v) => {
       let l, s = v === undefined ? '' : (v + '').trim()
+      if (typeof v !== 'string' && (l = s.indexOf('.')) >= 0 &&
+        s.length > (l + this._opt.fractionWidth + 1)) {
+        s = s.substring(0, l + this._opt.fractionWidth + 1)
+      }
       if ((l = s.length) > mw) {
         s = (s.substr(0, a) + '...' + s.substr(l - a)).substr(0, mw)
       }

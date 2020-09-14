@@ -170,7 +170,7 @@ const profBegin = (tag, threadId = undefined) => {
   if (threadId !== undefined) return profThreadBegin(tag, threadId)
   assert(tag && typeof tag === 'string' && tag.indexOf('>') < 0, 'profBegin(): invalid tag')
   const r = findByTag(tag, pending)
-  assert(!r, 'profBegin(' + tag + '): tag is still open')
+  assert(!r, foundAt + 'profBegin(' + tag + '): tag is still open')
   arrayAdd(pending, { tag, t0: getTime() })
   return true
 }
@@ -209,7 +209,7 @@ const profEnd = (tag, threadId = undefined) => {
     if (pureDuration) duration = duration === undefined ? t1 - t0 : duration + t1 - t0
     measure.add(t1 - t0, path)    //  NB: `path` is set only if there were open entries.
   }
-  if (duration) pending.forEach(r => r.t0 += duration)
+  if (duration) pending.forEach(r => r && (r.t0 += duration))
 
   return true
 }
