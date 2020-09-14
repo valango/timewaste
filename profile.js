@@ -1,7 +1,6 @@
 'use strict'
 
 const Sheet = require('./Sheet')
-const debugOptions = []   //  History of options set.
 
 /** @type {function(...)} can be set via profSetup() */
 let assert
@@ -16,14 +15,24 @@ let getTime
 let step, timeScale, zeroDuration
 
 /** @type {Array<Measure|ThreadAcc>} */
-let measures = []
+const measures = []
 /**
  * Open entries
  * @type {Array<{tag: string, t0:*}>}
  */
-let pending = []
+const pending = []
 /** @type {Array<{tag: string, t0:*}>} */
-let threads = []
+const threads = []
+
+const arrayAdd = (array, entry) => {
+  const i = array.findIndex(v => v === undefined)
+  if (i >= 0) { array[i] = entry } else array.push(entry)
+}
+
+const arrayUsed = (array) => {
+  return array.reduce((a, entry) => entry ? a + 1 : a, 0)
+}
+
 
 /**
  * Synchronous calls accumulator.
@@ -104,7 +113,7 @@ let foundIndex
 
 const findByTag = (tag, array) => {
   foundIndex = undefined
-  return array.find((r, i) => r.tag === tag && ((foundIndex = i) || true))
+  return array.find((r, i) => r && r.tag === tag && ((foundIndex = i) || true))
 }
 
 /**
@@ -121,8 +130,8 @@ const profThreadBegin = (tag, id) => {
   const name = tag + '#' + id, tg = '>' + tag
   assert(!findByTag(name, threads), 'profThreadBegin(' + name + '): doubled')
 
-  if (!findByTag(tg, measures)) measures.push(new ThreadAcc(tg))
-  threads.push({ tag: name, t0: getTime() })
+  if (!findByTag(tg, measures)) arrayAdd(measures, new ThreadAcc(tg))
+  arrayAdd(threads, { tag: name, t0: getTime() })
   return true
 }
 
@@ -131,7 +140,7 @@ const profThreadEnd = (tag, id) => {
   const rec = findByTag(name, threads)
 
   assert(rec, 'profThreadEnd(' + name + '): no thread')
-  threads.splice(foundIndex, 1)
+  threads[foundIndex] = undefined
   acc.t += getTime() - rec.t0
   acc.n += step
   return true
@@ -144,12 +153,13 @@ const profThreadEnd = (tag, id) => {
  * @returns {boolean|number}
  */
 const profBegin = (tag, threadId = undefined) => {
-  if (!isEnabled) return true
+  if (!isEnabled) return false
   if (threadId !== undefined) return profThreadBegin(tag, threadId)
   assert(tag && typeof tag === 'string' && tag.indexOf('>') < 0, 'profBegin(): invalid tag')
   const r = findByTag(tag, pending)
   assert(!r, 'profBegin(' + tag + '): tag is still open')
-  return pending.push({ tag, t0: getTime() })
+  arrayAdd(pending, { tag, t0: getTime() })
+  return true
 }
 
 /**
@@ -159,32 +169,34 @@ const profBegin = (tag, threadId = undefined) => {
  * @returns {boolean} always true
  */
 const profEnd = (tag, threadId = undefined) => {
-  if (isEnabled) {
-    if (threadId !== undefined) return profThreadEnd(tag, threadId)
+  if (!isEnabled) return false
 
-    const t1 = getTime()
-    let duration, j = 0, measure, realTag = tag
+  if (threadId !== undefined) return profThreadEnd(tag, threadId)
 
-    assert(pending.length || tag === true, 'profEnd(' + tag + '): nothing to end')
+  const t1 = getTime()
+  let duration, j = 0, measure, realTag = tag
 
-    if (tag === true) {
-      realTag = (pending[0] && pending[0].tag) || '???'
-      threads = []
-    } else {
-      const r = findByTag(tag, pending)
-      assert(r, 'profEnd(' + tag + '): no such entry')
-      j = foundIndex
-    }
+  assert(arrayUsed(pending) || tag === true, 'profEnd(' + tag + '): nothing to end')
 
-    for (let i = pending.length; --i >= j;) {
-      const path = (tag === true || i > j) && getPathTo(i)
-      const { t0 } = pending.pop()
-      if (!measure) measure = findByTag(realTag, measures) || newMeasure(realTag)
-      if (pureDuration) duration = duration === undefined ? t1 - t0 : duration + t1 - t0
-      measure.add(t1 - t0, path)    //  NB: `path` is set only if there were open entries.
-    }
-    if (duration) pending.forEach(r => r.t0 += duration)
+  if (tag === true) {
+    realTag = (pending[0] && pending[0].tag) || '???'
+    threads.forEach((v, i) => (threads[i] = undefined))
+  } else {
+    const r = findByTag(tag, pending)
+    assert(r, 'profEnd(' + tag + '): no such entry')
+    j = foundIndex
   }
+
+  for (let i = arrayUsed(pending); --i >= j;) {
+    const path = (tag === true || i > j) && getPathTo(i)
+    const { t0 } = pending[i]
+    pending[i] = undefined
+    if (!measure) measure = findByTag(realTag, measures) || newMeasure(realTag)
+    if (pureDuration) duration = duration === undefined ? t1 - t0 : duration + t1 - t0
+    measure.add(t1 - t0, path)    //  NB: `path` is set only if there were open entries.
+  }
+  if (duration) pending.forEach(r => r.t0 += duration)
+
   return true
 }
 
@@ -197,12 +209,13 @@ const profReset = (rx = undefined) => {
   if (isEnabled) {
     if (rx) {
       for (let i = measures.length; --i >= 0;) {
-        if (rx.test(measures[i].tag)) measures.splice(i, 1)
+        if (measures[i] && rx.test(measures[i].tag)) measures[i] = undefined
       }
     } else {
-      measures = []
+      measures.forEach((v, i) => (measures[i] = undefined))
     }
-    pending = []
+    pending.forEach((v, i) => (pending[i] = undefined))
+    threads.forEach((v, i) => (threads[i] = undefined))
   }
   return true
 }
@@ -210,7 +223,10 @@ const profReset = (rx = undefined) => {
 /**
  * @returns {number} current depth.
  */
-const profDepth = () => pending.length
+const profDepth = () => {
+  const i = pending.findIndex(v => v === undefined)
+  return i >= 0 ? i : pending.length
+}
 
 /**
  * @returns {Object[]} sorted array of measures.
@@ -218,7 +234,7 @@ const profDepth = () => pending.length
 const profResults = (sortBy = 'total') => {
   if (!isEnabled) return []
 
-  return measures.slice().sort((a, b) => {
+  return measures.filter(v => v).sort((a, b) => {
     const v = b[sortBy]() - a[sortBy]()
     if (v === 0n || v === 0) return 0
     return v > 0n ? 1 : -1
@@ -233,7 +249,7 @@ const profResults = (sortBy = 'total') => {
 const profOn = (yes = undefined) => {
   const old = isEnabled
   if (yes !== undefined) {
-    assert(yes || !(pending.length || threads.length), 'profOn(false) in pending state')
+    assert(yes || !(arrayUsed(pending) || arrayUsed(threads)), 'profOn(false) in pending state')
     isEnabled = yes
   }
   return old
@@ -242,10 +258,9 @@ const profOn = (yes = undefined) => {
 const profSetup = (options = undefined) => {
   const old = { getTime, pureDuration, timeScale }
 
-  debugOptions.push({ stack: new Error().stack, ...options })
   if (options) {
     if (options.assert) assert = options.assert    //  Useful for initialization.
-    assert(pending.length === 0 && measures.length === 0 && threads.length === 0,
+    assert(arrayUsed(pending) === 0 && arrayUsed(measures) === 0 && arrayUsed(threads) === 0,
       'profSetup() while operating')
     if (options.getTime) getTime = options.getTime
     if (options.pureDuration !== undefined) pureDuration = options.pureDuration

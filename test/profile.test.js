@@ -20,9 +20,9 @@ const tests = () => {
     profEnd(true)     //  Should not throw.
     expect(profOn(true)).toBe(true)
     time = 2
-    expect(profBegin('a') && profBegin('b')).toBe(2)
+    expect(profBegin('a') && profBegin('b') && profDepth()).toBe(2)
     time = 4
-    expect(profEnd('b') && profBegin('b')).toBe(2)
+    expect(profEnd('b') && profBegin('b') && profDepth()).toBe(2)
     time = 6
     profBegin('fun', 1)
     profEnd('b')
@@ -45,8 +45,8 @@ const tests = () => {
 
   it('should switch off', () => {
     expect(profOn(false)).toBe(true)
-    expect(profBegin('a') && profBegin('a') && profBegin('b')).toBe(true)
-    expect(profEnd('a')).toBe(true)
+    expect(profBegin('a') && profBegin('a') && profBegin('b')).toBe(false)
+    expect(profEnd('a')).toBe(false)
     expect(profResults().length).toBe(0)
     expect(profOn(true)).toBe(false)
   })
