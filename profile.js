@@ -15,8 +15,20 @@ let getTime
 //  number or BigInt values to make math work and to normalize totals.
 let step, timeScale, zeroDuration
 
-let measures = [], pending = [], threads = []
+/** @type {Array<Measure|ThreadAcc>} */
+let measures = []
+/**
+ * Open entries
+ * @type {Array<{tag: string, t0:*}>}
+ */
+let pending = []
+/** @type {Array<{tag: string, t0:*}>} */
+let threads = []
 
+/**
+ * Synchronous calls accumulator.
+ * Created when closing the first entry<tag> by profEnd().
+ */
 function Measure (tag) {
   this.entries = []
   this.n = zeroDuration
@@ -47,14 +59,18 @@ Measure.prototype.leaks = function () {
 
 //  Negative return value means pending while closed.
 Measure.prototype.mean = function () {
-  return this.total() ? this.total() / this.count() : -1
+  return this.total() / this.count()
 }
 
 /** @returns {BigInt|number} */
 Measure.prototype.total = function () {
-  return this.entries.reduce((a, r) => a + r[0], zeroDuration) / timeScale
+  return this.entries.reduce((a, entry) => a + entry[0], zeroDuration) / timeScale
 }
 
+/**
+ * Asynchronous calls accumulator.
+ * Created when pushing the first thread<tag> by profThreadBegin().
+ */
 function ThreadAcc (tag) {
   this.tag = tag
   this.t = zeroDuration
@@ -73,7 +89,7 @@ ThreadAcc.prototype.total = function () {
 
 //  Negative return value means pending while closed.
 ThreadAcc.prototype.mean = function () {
-  return this.n ? this.total() / this.n : -1
+  return this.n ? this.total() / this.n : -step
 }
 
 /** @returns {Measure} */
@@ -245,21 +261,16 @@ const profTexts = (sortBy = 'mean') => {
   const sheet = new Sheet({ minWidth: 7 })
 
   sheet.header = ['tag', 'mean', 'count', 'total']
-  try {
-    profResults(sortBy).forEach((r) => {
-      const leaks = r.leaks()
 
-      sheet.append([r.tag, r.mean(), r.count(), r.total()])
-      if (leaks.count) {
-        delete leaks.count
-        Object.keys(leaks).forEach(k => sheet.append('  LEAK: ' + k + ': ' + leaks[k]))
-      }
-    })
-  } catch (error) {
-    console.log(error.message)
-    console.log('setup options:\n', debugOptions)
-    console.log('measures:\n', measures)
-  }
+  profResults(sortBy).forEach((r) => {
+    const leaks = r.leaks()
+
+    sheet.append([r.tag, r.mean(), r.count(), r.total()])
+    if (leaks.count) {
+      delete leaks.count
+      Object.keys(leaks).forEach(k => sheet.append('  LEAK: ' + k + ': ' + leaks[k]))
+    }
+  })
   return sheet.dump()
 }
 

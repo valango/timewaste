@@ -15,7 +15,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.USE_DEV) {
 
   api.profSetup({
     assert: require('assert-fine'),
-    getTime: (process.hrtime && process.hrtime.bigint) || Date.now
+    getTime: process.hrtime ? process.hrtime.bigint : Date.now
   })
   module.exports = api
 }

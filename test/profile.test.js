@@ -2,15 +2,20 @@
 const { profBegin, profDepth, profEnd, profOn, profReset, profResults, profSetup, profTexts } =
         require('..')
 
-let time = 0
-const getTime = () => time
+let printed = [], time = 0
+const myGetTime = () => time
+let { getTime } = profSetup()
 
-const print = () => undefined
-// const print = str => process.stdout.write(str + '\n')
+const print = str => printed.push(str)
+const reset = (rx = undefined) => {
+  profReset(rx)
+  printed = []
+}
 
 const tests = () => {
   it('should handle main case', () => {
-    expect(Object.keys(profSetup({ getTime }))).toEqual(['getTime', 'pureDuration', 'timeScale'])
+    expect(Object.keys(profSetup({ getTime: myGetTime })))
+      .toEqual(['getTime', 'pureDuration', 'timeScale'])
     expect(profOn()).toBe(true)
     profEnd(true)     //  Should not throw.
     expect(profOn(true)).toBe(true)
@@ -32,9 +37,9 @@ const tests = () => {
   })
 
   it('should reset', () => {
-    profReset(/^a/)
+    reset(/^a/)
     expect(profResults('count').length).toBe(2)
-    profReset()
+    reset()
     expect(profResults().length).toBe(0)
   })
 
@@ -53,31 +58,43 @@ const tests = () => {
     expect(() => profOn(false)).toThrow('pending')
   })
 
-  it('should handle leaks', () => {
-    profReset()
+  it('should handle entry leaks', () => {
+    reset()
+    profSetup({ getTime })
     profBegin('a') && profBegin('b') && profBegin('c')
     profEnd('a')
     expect(profResults()[0].leaks().count).toBe(2)
     profTexts().forEach(r => print(r))
-    expect(profTexts().length).toBe(3)
-    profReset()   //  Here to clear measures.
+    expect(printed.length).toBe(3)
+  })
+
+  it('should handle thread leaks', () => {
+    reset()
+    profBegin('a', 1) && profBegin('b', 2) && profBegin('c', 3)
+    profEnd('b', 2)
+    profTexts('mean').forEach(r => print(r))
+    expect(printed.length).toBe(3)
   })
 
   it('should handle total leak', () => {
-    profReset()
+    reset()
     profBegin('a') && profBegin('b') && profBegin('c')
     profEnd(true)
+
     expect(profResults()[0].leaks().count).toBe(3)
     profTexts().forEach(r => print(r))
-    expect(profTexts().length).toBe(4)
-    profReset()   //  Here to clear measures.
+    expect(printed.length).toBe(4)
   })
 }
 
 describe('back-end mode', tests)
 
 describe('front-end mode', () => {
-  beforeAll(() => profSetup({ getTime: Date.now }))
+  beforeAll(() => {
+    reset()
+    getTime = Date.now
+    profSetup({ getTime })
+  })
 
   tests()
 })
