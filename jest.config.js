@@ -2,7 +2,7 @@
 module.exports = {
   bail: 1,
   collectCoverage: true,
-  collectCoverageFrom: ['**/*.js', '!*.config.js', '!.*'],
+  collectCoverageFrom: ['index.js', 'profile.js', 'Sheet.js'],
   coverageDirectory: 'reports',
   coveragePathIgnorePatterns: ['reports', 'test'],
   // coverageProvider: 'babel',
