@@ -1,6 +1,7 @@
 'use strict'
 
 const Sheet = require('./Sheet')
+const debugOptions = []   //  History of options set.
 
 /** @type {function(...)} can be set via profSetup() */
 let assert
@@ -208,23 +209,6 @@ const profResults = (sortBy = 'total') => {
   })
 }
 
-const profSetup = (options = undefined) => {
-  const old = { getTime, pureDuration, timeScale }
-
-  if (options) {
-    if (options.assert) assert = options.assert    //  Useful for initialization.
-    assert(pending.length === 0 && measures.length === 0 && threads.length === 0,
-      'profSetup() while operating')
-    if (options.getTime) getTime = options.getTime
-    if (options.pureDuration !== undefined) pureDuration = options.pureDuration
-    const big = typeof getTime() !== 'number'
-    timeScale = options.timeScale || (big ? BigInt(1e3) : 1)
-    zeroDuration = big ? 0n : 0
-    step = big ? 1n : 1
-  }
-  return old
-}
-
 /**
  * Enable / disable the profiler API.
  * @param {boolean|undefined} yes
@@ -239,19 +223,43 @@ const profOn = (yes = undefined) => {
   return old
 }
 
+const profSetup = (options = undefined) => {
+  const old = { getTime, pureDuration, timeScale }
+
+  debugOptions.push({ stack: new Error().stack, ...options })
+  if (options) {
+    if (options.assert) assert = options.assert    //  Useful for initialization.
+    assert(pending.length === 0 && measures.length === 0 && threads.length === 0,
+      'profSetup() while operating')
+    if (options.getTime) getTime = options.getTime
+    if (options.pureDuration !== undefined) pureDuration = options.pureDuration
+    const big = typeof getTime() !== 'number'
+    timeScale = options.timeScale || (big ? BigInt(1e3) : 1)
+    zeroDuration = big ? 0n : 0
+    step = big ? 1n : 1
+  }
+  return old
+}
+
 const profTexts = (sortBy = 'mean') => {
   const sheet = new Sheet({ minWidth: 7 })
 
   sheet.header = ['tag', 'mean', 'count', 'total']
-  profResults(sortBy).forEach((r) => {
-    let l = r.leaks()
+  try {
+    profResults(sortBy).forEach((r) => {
+      const leaks = r.leaks()
 
-    sheet.append([r.tag, r.mean(), r.count(), r.total()])
-    if (l.count) {
-      delete l.count
-      Object.keys(l).forEach(k => sheet.append('  LEAK: ' + k + ': ' + l[k]))
-    }
-  })
+      sheet.append([r.tag, r.mean(), r.count(), r.total()])
+      if (leaks.count) {
+        delete leaks.count
+        Object.keys(leaks).forEach(k => sheet.append('  LEAK: ' + k + ': ' + leaks[k]))
+      }
+    })
+  } catch (error) {
+    console.log(error.message)
+    console.log('setup options:\n', debugOptions)
+    console.log('measures:\n', measures)
+  }
   return sheet.dump()
 }
 
@@ -263,6 +271,6 @@ module.exports = {
   profReset,
   profResults,
   profSetup,
-  profTexts,
+  profTexts
 }
 
