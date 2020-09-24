@@ -242,7 +242,7 @@ class Qektors {
 }
 
 Qektors.options = {
-  Ctr: globalThis.Int32Array || Array
+  Ctr: Int32Array || Array
 }
 
 //  The T and N objects below are for profiling the class code, and
