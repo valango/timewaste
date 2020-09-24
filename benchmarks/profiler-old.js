@@ -3,7 +3,9 @@
 // overhead, we do not pop() or splice() the static arrays.
 // However, because use of classes, the problem still persists.
 
-const Sheet = require('./Sheet')
+//  ... and in fact, the thread concept as it is here, is pretty much useless. ;)
+
+const Sheet = require('../src/ToTable')
 
 /** @type {boolean} can be set via profOn() to control access to rest of the API. */
 let isEnabled = true
@@ -300,17 +302,15 @@ const profSetup = (options = undefined) => {
  * @returns {string[]}
  */
 const profTexts = (sortBy = 'mean') => {
-  const sheet = new Sheet({ minWidth: 7 })
-
-  sheet.header = ['tag', 'mean', 'count', 'total']
+  const sheet = new Sheet({ header: ['tag', 'mean', 'count', 'total'] })
 
   profResults(sortBy).forEach((r) => {
     const leaks = r.leaks()
 
-    sheet.append([r.tag, r.mean(), r.count(), r.total()])
+    sheet.add([r.tag, r.mean(), r.count(), r.total()])
     if (leaks.count) {
       delete leaks.count
-      Object.keys(leaks).forEach(k => sheet.append('  LEAK: ' + k + ': ' + leaks[k]))
+      Object.keys(leaks).forEach(k => sheet.add(['  LEAK: ' + k + ': ' + leaks[k]]))
     }
   })
   return sheet.dump()

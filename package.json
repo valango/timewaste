@@ -18,24 +18,29 @@
   },
   "main": "index.js",
   "files": [
-    "index.js",
-    "profile.js",
-    "Sheet.js"
+    "src/*.js"
   ],
   "scripts": {
     "clean": "rimraf reports *.log yarn.lock",
     "lint": "eslint *.js .",
+    "profilers": "node benchmarks/profilers v 2",
     "purge": "rimraf reports *.log yarn.lock node_modules",
+    "speeds": "node benchmarks/speeds.js v 10000",
     "test": "jest",
-    "test:coverage": "codecov"
+    "test:coverage": "codecov",
+    "test:used": "jest --coverage=true test/integration.spec.js",
+    "test1": "jest --coverage=false --bail=1 test/Numbers.test.js"
   },
   "dependencies": {
-    "assert-fine": "^1.0.1"
+    "assert-fine": "^1.0.1",
+    "lodash.defaults": "^4.2.0",
+    "microtime": "^3.0.0"
   },
   "devDependencies": {
     "codecov": "^3.7.2",
     "eslint": "^7.8.1",
     "jest": "^26.4.2",
+    "lodash": "^4.17.20",
     "rimraf": "^3.0.2"
   },
   "engines": {

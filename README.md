@@ -1,126 +1,211 @@
 # timewaste
 
-Lightweight execution time analyzer / profiler.
+Lightweight multi-threading capable execution time analyzer / profiler with.
 
 This package:
-   1. can provide clean and focused reports immune to code bundling / optimization;
-   1. can report execution statistics of any code sequences, not just functions;
+   1. provides clean and focused reports immune to code bundling / optimization;
+   1. reports execution statistics of any code sequences, not just functions;
    1. can handle concurrent threads / server endpoints;
    1. can handle callback-based code, like express.js middleware;
    1. monitors execution consistency by reporting "return leaks";
    1. in case of nested calls, both aggregated and self time can be reported;
-   1. supports both Node.js and browser environments;
+   1. supports both _Node.js_ and browser environments;
    1. allows performance monitoring and reporting to be controlled/analyzed programmatically.
 
 **Note:**
 Node.js [built-in profiler](https://nodejs.org/en/docs/guides/simple-profiling/),
-as well as Developer Tools of some browsers
+as well as Developer Tools of many browsers
 may provide all you need without installing anything - so please check those out
 if you haven't done so.
 
 ## Install
-```
-  yarn add timewaste
+```shell script
+   yarn add timewaste       # Either so...
+   npm i -S timewaste       # or so.
 ```
 
 ## Usage
+In order to do something, timewaste needs you to _waste some time
+on **spicing** your code_ with its API calls, mostly (_`profBeg`_ and _`profEnd`_).
+
+Here's an example:
 ```javascript
 import {profBeg, profEnd, profTexts} from 'timewaste'
 
-function a(){
-  profBeg('a')
-  //  Do something and sometimes return from in the middle of the code.
-  profEnd('a')
+function a() {
+  const h = profBeg('a')
+  //  Do something and sometimes call b().
+  profEnd(h)
 }
 
 function b () {
-  profBeg('b')
-  //  Do something and sometimes call a()
-  profEnd('b')
+  const h = profBeg('b')
+  //  Do something.
+  profEnd(h)
 }
 
-a()
+for (let i = 0; i < 1000; ++i) a()
 
 console.log(profTexts())
 ```
 
 Will produce an output similar to:
 ```
-tag                          mean    count    total
--------------------------+--------+--------+-------
-a              13       10      130
-b             5.625        8       45
+*** LEAKS (1):
+tag                                                   count
+-----------------------------------------------------------
+a b c d e f                                             766
+a b c d e f g h i j k l m n o p                       10000
 
+RESULTS:
+tag   count     avg     time   avg.total   time.total
+-----------------------------------------------------
+e     10000   16.20   162036       16.20       162036
+o     10000    9.89    98884        9.89        98884
+ . . .
+f       234    4.00        4      936.00          936
+j     10000    0.42     4203       14.03       140277
+p         0    0.00        0        0.00            0
 ```
 
-## Environment control
-In _production mode_ (e.g. `process.env.NODE_ENV === 'production'`),
-the package API will be replaced by set of empty calls returning empty objects of _false_
-and introducing no computational overhead nor adding to code size.
+This tells us that code sequence **`e`**, although gobbling up a gargantuan chunk
+of execution time might not be the main culprit because some of it's sub-parts or
+functions called, did the most.
 
-To enable `timewaste` even in production build, set `TIMEWASTE` environment variable _true_.
+Also, there have been some problem with function **`f`** which sometimes (not always,
+as _count_ is not _`0`_) has terminated
+(by throwing exception, returning or yielding a thread) without calling `profEnd()` first.
+When it comes to **`p`** then it has never terminated as appropriate.
 
-## Error handling
-Improper use of `timewaste` or code failures may result in errors.
-The errors will never be thrown, however, but will be kept in internal array
-available via `profStatus().errors`, resettable via `profOn(true)`.
+The leaks are most likely caused by missing something when spicing the target code,
+and not by target code bugs as such.
 
-## API functions
+## API
+### Constants
+**`P_TAG P_TIME P_AVG P_TOTAL P_TOT_AVG P_COUNT P_THREADS`**
+numeric indexes of _measures record_ columns, also applicable to
+[_sortByField_](#results) and [_fieldMask_](#texts) arguments.
 
-**`profBeg`**`(tag:string, threadId:number=) : boolean`
+**`P_NONE`** special value to prevent any sorting (mostly used internally).
 
-Creates a synchronous or asynchronous (thread) entry. The (tag, threadId) must be unique;
-recursions not allowed. Returns _true_ on success, _false_ otherwise.
-The `tag` must be a valid javascript identifier string.
+**`P_HEADERS`** string array containing headers for `profTexts()` function.
 
-**`profEnd`**`(tag:string, threadId:number=) : boolean`
+### Functions
+In the text below, the [jsdoc `{...}`](https://jsdoc.app/tags-type.html)
+syntax is used sparingly;
+`[type]` means that argument is optional or value may be _`undefined`_.
 
-Closes synchronous or asynchronous (thread) entry, summing it to respective measure.
-Returns _true_ on success, _false_ otherwise.
+**`profBeg`**`(tag: string, threadId: [*]) : {number | boolean | undefined}`
 
-**`profOn`**`(yes=)`
+Creates a call entry for the main or secondary thread.
+Returns _numeric handle_ on success, _`false`_ on failure and
+_`undefined`_ when profiler disabled.
 
-Query and possibly switch profiler activity status. Status is initially _true_;
-while set to _false_, the `profBeg()` and `profEnd()` functions do nothing and return `false`.
-Calling `profOn(true)` resets internal data structures.
+**`profEnd`**`(handle: number, threadId: [*]) : {boolean | undefined}`
 
-**`profResults`**`(sortByField:string=, earlierResults:Object=) : Object[]`
+Closes an entry created by `profBeg()`.
+Returns _true_ on success, _`false`_ on failure and
+_`undefined`_ when profiler disabled.
+
+**`profEnable`**`(yes=)`
+
+Query and possibly switch profiler _enabled_ status, which is initially _true_.
+While _false_, the `profBeg()` and `profEnd()` functions do nothing and return `false`.
+Calling `profEnable(false)` while there are call pending will be ignored, and internal error
+will be registered,
+see [`profStatus()`](#status) for details.
+<br />Profiling can be switched off and back on using this function.
+
+<a name="results">**`profResults`**`(sortByField: [number], earlierResults: [Object]) : Object`</a>
 
 Closes any pending measure entries, then
 computes and returns array of measurement result objects, possibly combined with
 `earlierResults`.
-The array will be ordered ascending by `sortByField` defaulting to 'avg', other possible values
-being 'count' and 'total'. Every entry in the array is an object with attributes:
-   * `tag: string` - from `profBeg()` call, thread tags will be terminated by `'>'`;
-   * `avg: *` - average duration of this sequence;
-   * `count: *` - number of times this sequence has been executed;
-   * `total: *` - total duration of this sequence;
+Unless _`sortByField`_ is -1, measures fill be sorted according to its value, which
+should be one of exported _`F_...`_ constants; default is _`F_AVG`_.
+The returned object has properties:
+   * `[errors]: Array<Error>`,
    * `[leaks]: Array<[path, count]>` - cases when `profBeg` was called but `profEnd` was not.
-
-Note, that numeric fields may be of `bigint` or `number` type, depending on `getTime()` in effect
-(see profSetup()).
+   * `measures: Array<[]>` - profiling results sorted by `sortByField`.
 
 **`profSetup`**`(options:Object=) : Object`
 
 Query and possibly change profiler general options, which can be:
    * `getTime: {function():*}` - function for querying current timestamp;
+   * `hook: {function():*}` - callback to be called before registering an internal error;
    * `timeScale: {number|bigint}` - must be the same type as `getTime()` return value;
    * `precision: {number=3}` - positions after decimal point, used by `profText()`;
-   * `useSum: {boolean=true}` - true forces summary time, not self time to be accumulated and reported. 
    
-Except for `useSum`, the other options are mainly useful just for testing.
-In _Node.js_ environment, `getTime` defaults to `process.hrtime.bigint`, in browser environment to
+In _Node.js_ environment, `getTime` defaults to `microtime`, in browser environment to
 `Date.now`; `timeScale` to `BigInt(1e3)` (microseconds) or `1` (milliseconds), respectively.
 
-**`profStatus`**`() : Object`
+Calling this function with an argument _will **reset all** internal data structures_.
+Doing so repeatedly may significantly slow down the code.
+
+<a name="status">**`profStatus`**`(details : boolean=) : Object`</a>
 
 Query for general status of profiling engine. The returned object has the following properties:
-   * `enabled: boolean` - internal flag controllable via `profOn()`;
-   * `[errors]: Error[]` - errors caused by bad API calls;
-   * `[pending]: string[]` - currently open call stack;
-   * `[running]: string[]` - list of currently running threads `'tag>id'`;
+   * `callDepth: number` - number of open synchronous entries;
+   * `enabled: boolean` - internal flag controllable via `profEnable()`;
+   * `errorCount: number`;
+   * `leakCount: number`;
+   * `threadCount: number`;
+   
+With `details` truey, the following extra properties will be available, too:
+   * `errors: Error[]` - errors caused by bad API calls;
+   * `openCalls: string[]` - currently open call stack as array of tags;
+   * `openThreads: string[]` - list of currently running threads as `'tag>id'`.
+   
+<a name="texts">**`profText`**`(sortByField: [number], data: [Object], fieldMask: [number[]]) : string[]`</a>
 
-**`profText`**`(sortByField:string=, results:Object=) : string[]`
+Turns `data` into line-by-line text array representing a pretty-printable table.
+If `data` are omitted, then calls `profResults()` is called to get one.
 
-Turns `results` into line-by-line text array representing a pretty-printable table.
-If `results` are omitted, then calls `profResults()` internally.
+The `sortByField` argument here is analogous to the one of `profResults()` function.
+
+When present, the `fieldMask` leaves on only the fields mentioned or excludes
+fields with negative index, e.g. like in `profTexts([-P_TOTAL, -P_TIME])`. It is not
+possible to exclude the _tag field_.
+
+## In-depth
+
+### Environment control
+In **_production mode_** (e.g. `process.env.NODE_ENV === 'production'`),
+the profiler code gets never loaded, and a do-nothing API will be exported instead.
+So, no noticeable computational overhead nor extra code will be added.
+
+To enable `timewaste` even in production build, set `TIMEWASTE` environment variable _true_.
+
+### Error handling
+Code failures and improper use of `timewaste` may result in errors.
+Exceptions get thrown on bad calls (e.g. invalid argument type or format).
+Other failures, like mismatched `profBeg/profEnd` pairs, will be silently accumulated
+in internal collections
+available via `profStatus().errors`, resettable via `profStatus()`.
+
+### Multi-threading
+When profiling code with actual multi-threading (like when using web workers) or
+just asynchronously executed code (like Node.js web server end points), it is likely
+(_`profBegin()`_,  _`profEnd()`_) call pairs get un-matched, effectively disabling
+the profiler.
+
+## Developer notes
+
+Every feedback and assistance will be appreciated. Use github issues list first,
+and feel free to make pull request in order to contribute.
+
+When installed in developer mode (using _`-D`_ option),
+the package will have tests and benchmarks included.
+
+There is some documentation about its inner parts available in _`src/*.md`_ files.
+
+### Instrumental scripts in `package.json`
+
+   * **`clean`**: erase all temporary files but not installed dependencies,
+   * **`lint`**: ...sure,
+   * **`purge`**: erase everything, expect stuff kept in _VCS_,
+   * **`speeds`**: speed benchmark,
+   * **`test`**: module tests,
+   * **`test:coverage`**: "codecov",
+   * **`test:used`**: generates coverage information based on actual profiler code.
+   * **`test1`**: for testing only what's hot right now,
