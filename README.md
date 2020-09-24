@@ -1,6 +1,7 @@
 # timewaste
 [![Build Status](https://travis-ci.org/valango/timewaste.svg?branch=master)](https://travis-ci.org/valango/timewaste) [![Code coverage](https://codecov.io/gh/valango/timewaste/branch/master/graph/badge.svg)](https://codecov.io/gh/valango/timewaste)
-Lightweight multi-threading capable execution time analyzer / profiler with.
+
+Lightweight multi-threading capable execution time analyzer / profiler.
 
 This package:
    1. provides clean and focused reports immune to code bundling / optimization;
