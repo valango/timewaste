@@ -192,7 +192,7 @@ the profiler.
 ## Developer notes
 
 Every feedback and assistance will be appreciated. Use github issues list first,
-and feel free to make pull request in order to contribute.
+and feel free to make pull request of _**development** branch_ in order to contribute.
 
 When installed in developer mode (using _`-D`_ option),
 the package will have tests and benchmarks included.
