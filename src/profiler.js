@@ -116,7 +116,7 @@ const factory = (options) => {
    * @returns {number} handle
    */
   const profBeg = (tag, threadId = undefined) => {
-   if (!isEnabled) return undefined
+    if (!isEnabled) return undefined
 
     const isMain = threadId === undefined
     const time = getTime()
@@ -136,7 +136,7 @@ const factory = (options) => {
       threadMap.set(threadId, thread)
     }
 
-    let iPen = -1
+    let iPen = false
     if (!thread.isLocked) {
       //  If pending entry for this tag exists, then flush this stuff.
       //    if whole stack a>b>c will leak unnoticed
@@ -148,11 +148,8 @@ const factory = (options) => {
         markAsLeaked(thread, iPen)
         //  If thread not empty, then only profEnd not above top will unlock.
         thread.isLocked = thread.topIndex > 0
-        iPen = -1
+        iPen = false
       } else {
-        if (thread.topIndex < 0) {
-          throw new Error('baa')
-        }
         iPen = thread.push(iMes, time, iTag)
         thread.total = 0                   //  This is a new entry.
       }
@@ -205,7 +202,12 @@ const factory = (options) => {
 
   const profPendingCount = () => mainThreadC.size
 
-  const argDefaults = (...args) => {
+  /**
+   * Analyses args and returns [sortField, data, fieldMask]
+   * @param {*[]} args
+   * @returns {[number, any, number[]]|string[]}
+   */
+  const argDefaults = (args) => {
     //  sortField, data, mask
     const values = [undefined, undefined, undefined]
 
@@ -213,15 +215,15 @@ const factory = (options) => {
       if ((v = args[i]) === undefined) continue
       j = -1
       if (typeof v === 'number') {
-        j = 0
+        j = 0                         //  sortField
       } else if (v && typeof v === 'object') {
         if (Array.isArray(v)) {
           if (typeof v[0] === 'number') {
-            j = 2
+            j = 2                     //  fieldMask
           } else {
-            j = 1
+            j = 1                     //  results
           }
-        } else if (v.measures) j = 1
+        } else if (v.measures) j = 1  //  results
       }
       if (j < 0 || values[j] !== undefined) return ['bad arguments']
       values[j] = v
@@ -233,7 +235,7 @@ const factory = (options) => {
   const sortBy = (array, fieldIndex) => {
     if (fieldIndex === 0) {
       array.sort(([a], [b]) => {
-        if (a === b) return 0
+        if (a === b) return 0   //  It never happens, because two tags cant be the same.
         return a < b ? -1 : 1
       })
     } else {
@@ -248,7 +250,7 @@ const factory = (options) => {
    * @returns {{[errors]: [], [leaks]: [], measures: []}}
    */
   const profResults = (sortByField = undefined, earlierResults = undefined) => {
-    let [sortField, earlier] = argDefaults(sortByField, earlierResults)
+    let [sortField, earlier] = argDefaults([sortByField, earlierResults])
 
     if (typeof sortField === 'string') throw new Error('profResults: ' + sortField)
 
@@ -264,13 +266,13 @@ const factory = (options) => {
       measures.push([tag, count, count ? time / count : 0, time,
         count ? total / count : 0, total]) // , measure[MSR_THREADS]])
     }
-    measures = measures.concat((earlier && earlier.measures) || [])
-    if (sortField >= 0) sortBy(measures, sortField)
-
     if (earlier) {
       errors = errors.concat(earlier.errors || [])
       leaks = leaks.concat(earlier.leaks || [])
+      measures = measures.concat(earlier.measures || [])
     }
+    if (sortField >= 0) sortBy(measures, sortField)
+
     const results = { measures }
 
     if (errors.length) results.errors = errors
@@ -325,7 +327,7 @@ const factory = (options) => {
   const profTexts = (sortByField = undefined, useResults = undefined, fieldMask = undefined) => {
     let errors, leaks, output = [], table
     /** @type {[number, Object, number[]]} */
-    let [sortField, results, toMask] = argDefaults(sortByField, useResults, fieldMask)
+    let [sortField, results, toMask] = argDefaults([sortByField, useResults, fieldMask])
 
     if (typeof sortField === 'string') throw new Error('profTexts: ' + sortField)
     if (toMask && toMask.length === 0) toMask = undefined
@@ -372,6 +374,7 @@ const factory = (options) => {
   profSetup(options)
 
   return {
+  //  test: () => ({ argDefaults, sortBy, leakedC, mainThreadC, measureC, threadMap }),
     profBeg,
     profEnd,
     profEnable,
