@@ -11,5 +11,5 @@ module.exports = {
 //  P_THREADS: 6,
   P_NONE: -1,     //  For sortByField argument only.
 
-  P_HEADERS: 'tag count avg time avg.total time.total'.split(' ')
+  P_HEADERS: 'tag count avg time total_avg total_time'.split(' ')
 }
