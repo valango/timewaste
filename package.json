@@ -20,6 +20,9 @@
   "files": [
     "src/*.js"
   ],
+  "publishConfig": {
+    "registry": "https:npm.pkg.github.com/"
+  },
   "scripts": {
     "clean": "rimraf reports *.log yarn.lock",
     "lint": "eslint *.js .",
