@@ -6,6 +6,7 @@ const defaults = require('lodash.defaults')
 
 //  The T and N objects below are for profiling the class code, and
 //  will be removed in future releases.
+//  To enable profiling, replace '\/\/ \$' with '\/\* \$ \*\/'.
 const N = {
   at: 0n,
   clear: 0n,

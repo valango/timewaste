@@ -1,4 +1,7 @@
+//   Compares new profiler with its outdated prototype and
+//  can benchmark the Qektors itself.
 'use strict'
+/* eslint no-console: 0 */
 
 const assert = require('assert')
 const { N, T } = require('../src/Qektors')
