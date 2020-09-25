@@ -84,15 +84,18 @@ const factory = (options) => {
     thread.total = 0
   }
 
-  const newError = (message, tag, thr = undefined) => {
-    const msg = message + ': \'' + tag + '\''
+  const newError = (message, tag = undefined, thr = undefined) => {
+    const msg = tag === undefined ? message : message + ': ' + tag
 
-  //  if (errorHook !== undefined) errorHook(message, tag)
+    //  if (errorHook !== undefined) errorHook(message, tag)
 
-    if (!errorC.has(msg)) {
+    let error = errorC.get(msg)
+    if (error) {
+      if (thr !== undefined && !error.threadIds.includes(thr)) error.threadIds.push(thr)
+    } else {
       const error = new Error(msg)
       error.tag = tag
-      if (thr) error.threadId = thr
+      error.threadIds = thr === undefined ? [] : [thr]
       errorC.set(msg, error)
     }
     return false
@@ -187,12 +190,12 @@ const factory = (options) => {
     return true
   }
 
-  const profEnable = (yes = undefined) => {   // Todo: refactor!
+  const profEnable = (yes = undefined) => {
     const was = isEnabled
 
     if (yes !== undefined) {
       if (!yes && mainThreadC.size > 0) {
-        return newError('profEnable(false): there are calls pending', '') || undefined
+        return newError('profEnable(false): there are calls pending') || undefined
       } else {
         isEnabled = !!yes
       }
@@ -351,7 +354,10 @@ const factory = (options) => {
     if (measures !== results) {
       if ((errors = results.errors)) {
         output.push('', `*** ERRORS (${errors.length}):`)
-        errors.forEach(e => output.push(e.message))
+        errors.forEach(e => {
+          let ids = e.threadIds.length
+          output.push(e.message + (ids ? ' (in ' + e.threadIds.length + ' threads)' : ''))
+        })
       }
       if ((leaks = results.leaks)) {
         output.push('', `*** LEAKS (${leaks.length}):`)
@@ -374,7 +380,7 @@ const factory = (options) => {
   profSetup(options)
 
   return {
-  //  test: () => ({ argDefaults, sortBy, leakedC, mainThreadC, measureC, threadMap }),
+    //  test: () => ({ argDefaults, sortBy, leakedC, mainThreadC, measureC, threadMap }),
     profBeg,
     profEnd,
     profEnable,
