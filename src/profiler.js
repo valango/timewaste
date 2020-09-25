@@ -257,6 +257,7 @@ const factory = (options) => {
 
     if (typeof sortField === 'string') throw new Error('profResults: ' + sortField)
 
+    markAsLeaked(mainThreadC, 1)
     let measures = [], errors = getErrors()
     let leaks = leakedC.map(([iStr, cnt]) => ([stringC.at(iStr), cnt]))
 
