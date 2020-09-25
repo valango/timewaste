@@ -90,7 +90,9 @@ class ToTable {
         let v = row[iC], decs
 
         if (typeof v !== 'string') {
-          if (typeof v === 'number' && (decs = dsc.decimals) !== undefined) {
+          if (v === undefined) {
+            v = ''
+          } else if (typeof v === 'number' && (decs = dsc.decimals) !== undefined) {
             const suff = '.' + new Uint8Array(decs).join('')
             v = round(v, decs) + ''
             const l = v.length, d = v.indexOf('.')
