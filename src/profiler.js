@@ -38,7 +38,7 @@ const factory = (options) => {
   /** @type {Qektors} accumulating measures. */
   let measureC
 
-  let errorHook
+  //  let errorHook
   /** @type {function():number} time query function. */
   let getTime
   /** @type {number} microseconds per discreet. */
@@ -87,7 +87,7 @@ const factory = (options) => {
   const newError = (message, tag, thr = undefined) => {
     const msg = message + ': \'' + tag + '\''
 
-    if (errorHook !== undefined) errorHook(message, tag)
+  //  if (errorHook !== undefined) errorHook(message, tag)
 
     if (!errorC.has(msg)) {
       const error = new Error(msg)
@@ -163,7 +163,7 @@ const factory = (options) => {
     const time = getTime(), isMain = threadId === undefined
     const thread = isMain ? mainThreadC : threadMap.get(threadId)
 
-    if (thread === undefined) return newError('profEnd: no thread', threadId)
+    if (thread === undefined) return newError('profEnd: no thread', handle, threadId)
 
     const entry = thread.at(handle)
     if (entry === undefined) return newError('profEnd: no entry', handle, threadId)
@@ -192,7 +192,7 @@ const factory = (options) => {
 
     if (yes !== undefined) {
       if (!yes && mainThreadC.size > 0) {
-        newError('profEnable(false): there are calls pending', '')
+        return newError('profEnable(false): there are calls pending', '') || undefined
       } else {
         isEnabled = !!yes
       }

@@ -108,12 +108,12 @@ Closes an entry created by `profBeg()`.
 Returns _true_ on success, _`false`_ on failure and
 _`undefined`_ when profiler disabled.
 
-**`profEnable`**`(yes=)`
+**`profEnable`**`(yes=) : {boolean | undefined}`
 
 Query and possibly switch profiler _enabled_ status, which is initially _true_.
 While _false_, the `profBeg()` and `profEnd()` functions do nothing and return `false`.
 Calling `profEnable(false)` while there are call pending will be ignored, and internal error
-will be registered,
+will be registered and `undefined` returned;
 see [`profStatus()`](#status) for details.
 <br />Profiling can be switched off and back on using this function.
 
