@@ -58,6 +58,7 @@ const tests = (t) => {
     expect(beg(t, 'abc', 12)).toEqual([1, 2, 3])
     expect(t.profStatus()).toEqual(
       { ...dfltStatus, callDepth: 3, measureCount: 3, threadCount: 2 })
+    // expect(t.profStatus(true).openCalls).toEqual(['a', 'b', 'c'])
   })
 
   it('should dispose some threads', () => {
@@ -66,7 +67,7 @@ const tests = (t) => {
       { ...dfltStatus, callDepth: 3, measureCount: 3, threadCount: 1 })
     expect(beg(t, 'abc', 10)).toEqual([1, 2, 3])
     expect(end(t, [3, 2, 1])).toEqual([true, true, true])
-    end(t,beg(t,'b')) && end(t,beg(t,'b'))    //  Create fractional entries.
+    end(t, beg(t, 'b')) && end(t, beg(t, 'b'))    //  Create fractional entries.
     expect(t.profStatus()).toEqual(
       { ...dfltStatus, measureCount: 3, threadCount: 2 })
   })
@@ -120,10 +121,22 @@ const tests = (t) => {
     beg(t, 'a', 2)
     expect(end(t, [1, 1, 1])).toEqual([false, false, false])
     expect(end(t, [2, 2], 3)).toEqual([false, false])
-    beg(t, 'xy')       //  Open entry in main thread should block enable(false)
+    beg(t, 'xyz')       //  Open entry in main thread should block enable(false)
+    beg(t, 'y')         //  Should create a leak.
     expect(t.profEnable(false)).toBe(undefined)
     expect(t.profEnable()).toBe(true)
-    expect(t.profStatus().errorCount).toBe(3)
+    const st = t.profStatus(true)
+    expect(st.errors.map(e => e.message)).toEqual([
+      'profEnd: no entry: 1', 'profEnd: no thread: 2', 'profEnable(false): there are calls pending'
+    ])
+    delete st.errors
+    expect(st).toEqual({
+      ...dfltStatus,
+      ...{
+        callDepth: 1, errorCount: 3, leakCount: 2, measureCount: 4, threadCount: 1,
+        leaks: [['x y z', 1], ['x y', 1]], openCalls: ['x'], threadLengths: [[2, 1]]
+      }
+    })
     expect(t.profTexts().findIndex(l => l.indexOf('*** ERROR') === 0)).toBe(1)
   })
 
