@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "assert-fine": "^1.0.1",
-    "lodash.defaults": "^4.2.0",
     "microtime": "^3.0.0"
   },
   "devDependencies": {

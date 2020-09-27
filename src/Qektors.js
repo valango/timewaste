@@ -1,6 +1,4 @@
 'use strict'
-
-const defaults = require('lodash.defaults')
 // $ const { hrtime } = process
 // $ const getTime = hrtime.bigint
 
@@ -53,7 +51,7 @@ class Qektors {
    */
   constructor (options) {
     if (!(options && typeof options === 'object')) this._complain(E_OPTIONS, '', 0)
-    const opts = defaults({}, options, Qektors.options)
+    const opts = { ...Qektors.options, ...options }
     if (!(opts.width >= 1)) this._complain(E_OPTIONS)
     if (typeof opts.Ctr !== 'function') this._complain('bad \'Ctr\' option')
 
