@@ -32,7 +32,6 @@
     "test1": "jest --coverage=false --bail=1 test/Numbers.test.js"
   },
   "dependencies": {
-    "assert-fine": "^1.0.1",
     "microtime": "^3.0.0"
   },
   "devDependencies": {
