@@ -28,8 +28,7 @@
     "speeds": "node benchmarks/speeds.js v 10000",
     "test": "jest",
     "test:coverage": "codecov",
-    "test:used": "jest --coverage=true test/integration.spec.js",
-    "test1": "jest --coverage=false --bail=1 test/Numbers.test.js"
+    "test1": "jest --coverage=false --bail=1"
   },
   "dependencies": {
     "microtime": "^3.0.0"

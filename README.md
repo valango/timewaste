@@ -71,7 +71,7 @@ p         0    0.00        0        0.00            0
 ```
 
 This tells us that code sequence **`e`**, although gobbling up a gargantuan chunk
-of execution time might not be the main culprit because some of it's sub-parts or
+of execution time, might not be the main culprit, because some of it's sub-parts or
 functions called, did the most.
 
 Also, there have been some problem with function **`f`** which sometimes (not always,
@@ -196,9 +196,6 @@ the profiler.
 Every feedback and assistance will be appreciated. Use github issues list first,
 and feel free to make pull request of _**development** branch_ in order to contribute.
 
-When installed in developer mode (using _`-D`_ option),
-the package will have tests and benchmarks included.
-
 There is some documentation about its inner parts available in _`src/*.md`_ files.
 
 ### Instrumental scripts in `package.json`
@@ -209,5 +206,4 @@ There is some documentation about its inner parts available in _`src/*.md`_ file
    * **`speeds`**: speed benchmark,
    * **`test`**: module tests,
    * **`test:coverage`**: "codecov",
-   * **`test:used`**: generates coverage information based on actual profiler code.
-   * **`test1`**: for testing only what's hot right now,
+   * **`test1`**: e.g.: `yarn test1 numbers` to check for failures w/o generating coverage.
