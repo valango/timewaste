@@ -5,32 +5,15 @@
 //  The T and N objects below are for profiling the class code, and
 //  will be removed in future releases.
 //  To enable profiling, replace '\/\/ \$' with '\/\* \$ \*\/'.
-const N = {
-  at: 0n,
-  clear: 0n,
-  delete: 0n,
-  grant: 0n,
-  indexOf: 0n,
-  map: 0n,
-  push: 0n
-}
-
-const T = {
-  at: 0n,
-  clear: 0n,
-  delete: 0n,
-  grant: 0n,
-  indexOf: 0n,
-  map: 0n,
-  push: 0n
-}
+const N = { at: 0n, clear: 0n, delete: 0n, grant: 0n, indexOf: 0n, map: 0n, push: 0n }
+const T = { at: 0n, clear: 0n, delete: 0n, grant: 0n, indexOf: 0n, map: 0n, push: 0n }
 
 const ME = 'Qektors'
 const E_OPTIONS = '\'options\' should be an object with positive \'width\' property'
 
 /**
  * @class Qektors
- * LIFO of numeric keyed vectors.
+ * LIFO-style collection of numeric keyed vectors.
  * This class helps to minimize Garbage Collector runs.
  *
  * @property {function()} Ctr       - entry constructor.
@@ -47,7 +30,7 @@ const E_OPTIONS = '\'options\' should be an object with positive \'width\' prope
  */
 class Qektors {
   /**
-   * @param {Object} options
+   * @param {Object} options - `width` must be explicitly defined!
    */
   constructor (options) {
     if (!(options && typeof options === 'object')) this._complain(E_OPTIONS, '', 0)
@@ -62,14 +45,14 @@ class Qektors {
     this.total = 0
     this.isLocked = false
     this.next = null
-    this._raw = [new this._Ctr(this._width)]  //  This way, valid index is never 0!
+    this._raw = [new this._Ctr(this._width)]  //  So, valid index is never 0!
     this._isTyped = (this._raw.buffer && this._raw.buffer instanceof ArrayBuffer) || false
   }
 
   /**
    * Internal error emitter.
-   * @param {string} msg    - error message.
-   * @param {string=} locus - empty means constructor.
+   * @param {string}        msg    - error message.
+   * @param {string=}       locus  - empty means constructor.
    * @param {string|number} extras - for `extras` property or 0 for generating TypeError.
    * @protected
    */
@@ -81,14 +64,7 @@ class Qektors {
     throw error
   }
 
-  /** @type {string} - only temporarily here! *
-   get debugInfo () {
-    const s = ['locked=' + this.isLocked, 'top=' + this._iTop + ' _raw=']
-    for (let i = 1; i < this._raw.length; ++i) {
-      s.push('\n    [' + this._raw[i].join(' ') + ']')
-    }
-    return s.join(', ')
-  } */
+  //  Those read-only properties are documented in class description above.
 
   get Ctr () {
     return this._Ctr
@@ -123,13 +99,17 @@ class Qektors {
     return this._width
   }
 
+  /**
+   * Retrieve an existing entry by its index.
+   * @param {number} index
+   * @returns {undefined|*}
+   */
   // $ /*
   at (index) {
     if (index === 0) return undefined
     const entry = this._raw[index]
     return entry && entry[0] === 0 ? undefined : entry
   } // $ /* */
-
   // $ at (index) {
   // $   const t0 = getTime()
   // $   let entry
@@ -141,6 +121,10 @@ class Qektors {
   // $   return entry
   // $ }
 
+  /**
+   * Delete all entries, but do not release allocated memory.
+   * @returns {Qektors}
+   */
   clear () {
     // $ const t0 = getTime()
     const { _raw } = this
@@ -153,7 +137,7 @@ class Qektors {
 
   /**
    * Mark the top entry as deleted.
-   * @returns {number} remaining size or undefined on failure
+   * @returns {number} remaining entries count.
    */
   delete () {
     // $ const t0 = getTime()
@@ -168,9 +152,9 @@ class Qektors {
   }
 
   /**
-   * Ensure that that entry with given `key` exists.
+   * Ensure that entry with given `key` exists (allocate if necessary).
    * @param {number} key
-   * @returns {number} index of the key.
+   * @returns {number} entry index.
    */
   grant (key) {
     // $ const t0 = getTime()
@@ -205,7 +189,7 @@ class Qektors {
   }
 
   /**
-   * Similar to Array.prototype.map(), except the `limit` parameter.
+   * Similar to Array.prototype.map().
    * @param {function(*,*,*):*} cb
    * @returns {[]}
    */
@@ -221,6 +205,7 @@ class Qektors {
   }
 
   /**
+   * Add an entry of `values` to the end of collection.
    * @param {...number} values
    * @returns {number} new topIndex
    */
@@ -244,7 +229,7 @@ Qektors.options = {
   Ctr: Int32Array || Array
 }
 
-//  The T and N objects below are for profiling the class code, and
+//  The T and N exports below are for profiling the class code, and
 //  will be removed in future releases.
 Qektors.N = N
 Qektors.T = T

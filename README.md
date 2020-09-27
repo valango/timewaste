@@ -60,7 +60,7 @@ a b c d e f                                             766
 a b c d e f g h i j k l m n o p                       10000
 
 RESULTS:
-tag   count     avg     time   avg.total   time.total
+tag   count     avg     time   total_avg   total_time
 -----------------------------------------------------
 e     10000   16.20   162036       16.20       162036
 o     10000    9.89    98884        9.89        98884

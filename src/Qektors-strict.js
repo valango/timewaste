@@ -5,7 +5,7 @@ const Qektors = require('./Qektors')
 const PROHIBITED = 'push pop splice shift unshift'.split(' ')
 
 /**
- * To be used in place of Quektors while debugging.
+ * Qektors with strict argument checks, useful while debugging.
  */
 class StrictQuektors extends Qektors {
   constructor (options) {
@@ -28,25 +28,29 @@ class StrictQuektors extends Qektors {
     }
   }
 
+  /**
+   * Assertion helper composing meaningful error messages.
+   * @param {*} condition - falsy value wil throw;
+   * @param {string} locus - usually function name;
+   * @param {string} msg
+   * @param {...*} values - usually function arguments.
+   * @private
+   */
   _assert (condition, locus, msg, ...values) {
-    if (condition) return condition
+    if (condition) return
     const args = (Array.isArray(values[0]) ? values[0] : values).join(', ')
-    this._complain(typeof msg === 'function' ? msg() : msg, (locus || '') + '(' + args + ')')
+    this._complain(typeof msg === 'function' ? msg() : msg, locus + '(' + args + ')')
   }
 
   get strict () {
     return true
   }
 
-  //  The TypedArray cant shrink or grow.
-  //  It won't report errors either, except when non-existing methods,
-  //  like pop(), push() on splice() is called.
-  //  Ordinary Array can be frozen.
   at (index) {
     const assert = this._assert.bind(this), entry = super.at(index)
     const noFun = what => (assert(false, what, 'not a function'))
 
-    this._assert(entry !== undefined, 'at', 'bad index value', index)
+    assert(entry !== undefined, 'at', 'bad index value', index)
 
     const locus = '[' + index + ']'
     //  Check the bounds and return a valid integer.
@@ -57,6 +61,8 @@ class StrictQuektors extends Qektors {
       return j
     }
 
+    //  This proxy ensures that all illegal operations with returned entry
+    //  get thrown exceptions upon.
     return new Proxy(entry, {
       /**
        * @param {Object} o
