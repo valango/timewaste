@@ -52,21 +52,19 @@ IndexMap.prototype.put = function (key) {
 }
 
 /**
- * Get array element by index.
+ * Get string by index.
  * @param {number} index
- * @returns {*}
- * @throws {Error} on non-existent key.
+ * @returns {string|undefined}
  */
 IndexMap.prototype.at = function (index) {
-  const map = this._map, size = map.size, iterator = map.keys()
+  if (index >= 1 && index <= this._seed) {
+    const iterator = this._map.keys()
 
-  if (!(index >= 1 && index <= size)) return undefined
-
-  for (let i = 0, r; (r = iterator.next()).done === false;) {
-    if (++i === index) return r.value
+    for (let i = 0, r; (r = iterator.next()).done === false;) {
+      if (++i === index) return r.value
+    }
   }
-  /* istanbul ignore next */
-  throw new Error('IndexMap#at(' + index + '): failed')
+  return undefined
 }
 
 /**
