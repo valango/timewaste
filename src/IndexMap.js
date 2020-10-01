@@ -19,7 +19,7 @@ IndexMap.prototype.clear = function () {
 
 /**
  * Remove an entry by key.
- * @param key
+ * @param {string} key
  * @returns {boolean}
  */
 IndexMap.prototype.delete = function (key) {
@@ -28,7 +28,7 @@ IndexMap.prototype.delete = function (key) {
 
 /**
  * Retrieve an index for key.
- * @param key
+ * @param {string} key
  * @returns {number}
  */
 IndexMap.prototype.get = function (key) {
@@ -38,7 +38,7 @@ IndexMap.prototype.get = function (key) {
 /**
  * Retrieve an index for possibly new key.
  *
- * @param key - can't be empty.
+ * @param {string} key - can't be empty.
  * @returns {number} - index of array element; 0 is returned on empty string.
  */
 IndexMap.prototype.put = function (key) {
@@ -54,6 +54,7 @@ IndexMap.prototype.put = function (key) {
  * Get array element by index.
  * @param {number} index
  * @returns {*}
+ * @throws {Error} on non-existent key.
  */
 IndexMap.prototype.at = function (index) {
   const map = this.map, size = map.size, iterator = map.keys()
