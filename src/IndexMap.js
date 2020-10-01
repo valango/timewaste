@@ -43,10 +43,10 @@ IndexMap.prototype.get = function (key) {
  * @returns {number} - index of array element; 0 is returned on empty string.
  */
 IndexMap.prototype.put = function (key) {
-  let i = 0
+  let a = this._map, i = 0
 
-  if (key && (i = this._map.get(key)) === undefined) {
-    this._map.set(key, i = ++this._seed)
+  if (key && (i = a.get(key)) === undefined) {
+    a.set(key, i = (a.size + 1))
   }
   return i
 }
@@ -57,7 +57,7 @@ IndexMap.prototype.put = function (key) {
  * @returns {string|undefined}
  */
 IndexMap.prototype.at = function (index) {
-  if (index >= 1 && index <= this._seed) {
+  if (index >= 1 && index <= this._map.size) {
     const iterator = this._map.keys()
 
     for (let i = 0, r; (r = iterator.next()).done === false;) {
