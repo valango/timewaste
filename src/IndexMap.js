@@ -7,14 +7,14 @@
  * @constructor
  */
 function IndexMap () {
-  this.map = new Map()
+  this._map = new Map()
 }
 
 /**
  * Clear all entries.
  */
 IndexMap.prototype.clear = function () {
-  this.map.clear()
+  this._map.clear()
 }
 
 /**
@@ -23,7 +23,7 @@ IndexMap.prototype.clear = function () {
  * @returns {boolean}
  */
 IndexMap.prototype.delete = function (key) {
-  return this.map.delete(key)
+  return this._map.delete(key)
 }
 
 /**
@@ -32,7 +32,7 @@ IndexMap.prototype.delete = function (key) {
  * @returns {number}
  */
 IndexMap.prototype.get = function (key) {
-  return this.map.get(key) || 0
+  return this._map.get(key) || 0
 }
 
 /**
@@ -42,7 +42,7 @@ IndexMap.prototype.get = function (key) {
  * @returns {number} - index of array element; 0 is returned on empty string.
  */
 IndexMap.prototype.put = function (key) {
-  let a = this.map, i = 0
+  let a = this._map, i = 0
 
   if (key && (i = a.get(key)) === undefined) {
     a.set(key, i = (a.size + 1))
@@ -57,7 +57,7 @@ IndexMap.prototype.put = function (key) {
  * @throws {Error} on non-existent key.
  */
 IndexMap.prototype.at = function (index) {
-  const map = this.map, size = map.size, iterator = map.keys()
+  const map = this._map, size = map.size, iterator = map.keys()
 
   if (!(index >= 1 && index <= size)) return undefined
 
@@ -72,7 +72,7 @@ IndexMap.prototype.at = function (index) {
  * @returns {number} of entries.
  */
 IndexMap.prototype.size = function () {
-  return this.map.size
+  return this._map.size
 }
 
 module.exports = IndexMap
