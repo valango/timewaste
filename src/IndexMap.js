@@ -8,6 +8,7 @@
  */
 function IndexMap () {
   this._map = new Map()
+  this._seed = 0
 }
 
 /**
@@ -42,10 +43,10 @@ IndexMap.prototype.get = function (key) {
  * @returns {number} - index of array element; 0 is returned on empty string.
  */
 IndexMap.prototype.put = function (key) {
-  let a = this._map, i = 0
+  let i = 0
 
-  if (key && (i = a.get(key)) === undefined) {
-    a.set(key, i = (a.size + 1))
+  if (key && (i = this._map.get(key)) === undefined) {
+    this._map.set(key, i = ++this._seed)
   }
   return i
 }
